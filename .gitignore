@@ -1,3 +1,4 @@
 /redshift_management_compiler.egg-info/
 /.venv/
 /.idea/
+/build/
