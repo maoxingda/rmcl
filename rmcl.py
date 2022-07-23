@@ -15,7 +15,7 @@ def main():
 @click.option('-a', '--balance-account-snowflake-id', required=True, prompt='个人余额账户ID')
 @click.option('-s', '--start-date', required=True, prompt='报表查询开始日期')
 @click.option('-e', '--end-date', required=True, prompt='报表查询截止日期')
-@click.argument('file_name', required=True)
+@click.argument('file_name', required=True, type=click.Path(exists=True))
 def a7(
         render,
         client_snowflake_id,
@@ -55,7 +55,7 @@ def a7(
 @click.option('-a', '--wallet-id', required=True, prompt='第三方钱包账户ID')
 @click.option('-s', '--start-date', required=True, prompt='报表查询开始日期')
 @click.option('-e', '--end-date', required=True, prompt='报表查询截止日期')
-@click.argument('file_name', required=True)
+@click.argument('file_name', required=True, type=click.Path(exists=True))
 def t1(
         render,
         client_snowflake_id,
