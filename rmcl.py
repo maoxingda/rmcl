@@ -11,10 +11,10 @@ def main():
 
 @main.command()
 @click.option('-r', '--render/--no-render', default=False)
-@click.option('-c', '--client-snowflake-id', required=True)
-@click.option('-a', '--balance-account-snowflake-id', required=True)
-@click.option('-s', '--start-date', required=True)
-@click.option('-e', '--end-date', required=True)
+@click.option('-c', '--client-snowflake-id', required=True, prompt='客户雪花ID')
+@click.option('-a', '--balance-account-snowflake-id', required=True, prompt='个人余额账户ID')
+@click.option('-s', '--start-date', required=True, prompt='报表查询开始日期')
+@click.option('-e', '--end-date', required=True, prompt='报表查询截止日期')
 @click.argument('file_name', required=True)
 def a7(
         render,
