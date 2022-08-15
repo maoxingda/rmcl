@@ -131,7 +131,7 @@ def s6(
 @click.option('-s', '--start-date', required=True, prompt='报表查询开始日期')
 @click.option('-e', '--end-date', required=True, prompt='报表查询截止日期')
 @click.argument('file_name', required=True, type=click.Path(exists=True))
-def s6(
+def r15(
         render,
         client_member_sn_id,
         start_date,
