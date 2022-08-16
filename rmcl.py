@@ -1,6 +1,9 @@
 import os
+import re
+from pprint import pprint
 
 import click
+import psycopg2
 from jinja2 import Template
 
 
@@ -161,5 +164,77 @@ def r15(
             f.write(sql)
 
 
+@main.command()
+@click.option('-s', '--schemas', show_default=True, default='stg|dim|dwd|dws|met')
+@click.option('-f', '--filters', show_default=True, default='_stg|_staging|_tmp|_temp')
+@click.option('-e', '--exist / --no-exist', default=False)
+@click.argument('file_name', required=True, type=click.Path(exists=True))
+def depends(
+        schemas,
+        filters,
+        exist,
+        file_name,
+):
+    # /*
+    # ...
+    # */
+    multiline_comment_pattern = re.compile(r'''
+        (?<=/\*) # start with /*
+        (?:.*?)  # non-capture group & any chars, contains newline(\n), non-greedy mode
+        (?=\*/)  # end with */
+    ''', re.VERBOSE | re.DOTALL)
+
+    # -- ...
+    single_line_pattern = re.compile(r'''
+        -- # start
+        .* # any chars, not contains newline(\n)
+    ''', re.VERBOSE)
+
+    # <schema>.<table>
+    schema_table_pattern = re.compile(rf'''
+        (?:{schemas}) # schema, non-capture group
+        \.            # .
+        \w+           # table
+    ''', re.VERBOSE)
+
+    work_dir = os.getcwd()
+    sql_file_path = os.path.join(work_dir, file_name)
+
+    with open(sql_file_path) as f:
+        sql = f.read()
+
+    sql = multiline_comment_pattern.sub('', sql)
+    sql = single_line_pattern.sub('', sql)
+    tables = schema_table_pattern.findall(sql)
+
+    def is_exist(table):
+        schema_name = table.split('.')[0]
+        table_name = table.split('.')[1]
+        with psycopg2.connect(
+                f'postgresql://{os.environ.get("REDSHIFT_SANDBOX")}') as conn:
+            with conn.cursor() as cursor:
+                sql = f'set search_path to {schema_name};'
+                cursor.execute(sql)
+                sql = f"""
+                    select 1
+                    from svv_all_tables
+                    where schema_name = '{schema_name}' and table_name = '{table_name}'
+                """
+                cursor.execute(sql)
+                if cursor.fetchall():
+                    return True
+
+    tables = set(
+        schema_table for schema_table in tables
+        if schema_table.split('.')[1] not in file_name and (not exist or is_exist(schema_table))
+    )
+
+    tables = [
+        schema_table for schema_table in tables if not re.search(rf'{filters}', schema_table.split('.')[1])
+    ]
+
+    pprint(sorted(tables))
+
+
 if __name__ == '__main__':
-    main()
+    depends()
