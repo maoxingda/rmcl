@@ -2,6 +2,8 @@ import os
 import re
 from pprint import pprint
 
+from datetime import datetime, timedelta
+
 import click
 import psycopg2
 from jinja2 import Template
@@ -234,6 +236,38 @@ def depends(
     ]
 
     pprint(sorted(tables))
+
+
+@main.command()
+@click.option('-r', '--render/--no-render', default=False)
+@click.option('-s', '--dw-latest-partition',
+              default=(datetime.utcnow() - timedelta(hours=40)).strftime('%Y/%m/%d/16'), prompt='增量开始分区')
+@click.option('-e', '--dw-eold-partition',
+              default=(datetime.utcnow() - timedelta(hours=16)).strftime('%Y/%m/%d/16'), prompt='增量结束分区')
+@click.argument('file_name', required=True, type=click.Path(exists=True))
+def etl(
+        render,
+        dw_latest_partition,
+        dw_eold_partition,
+        file_name,
+):
+    work_dir = os.getcwd()
+    sql_file_path = f'{work_dir}/{file_name}'
+
+    if render:
+        with open(sql_file_path) as f:
+            sql = f.read().replace('$dw_latest_partition', dw_latest_partition)
+            sql = sql.replace('$dw_eold_partition', dw_eold_partition)
+
+        with open(sql_file_path, 'w') as f:
+            f.write(sql)
+    else:
+        with open(sql_file_path) as f:
+            sql = f.read().replace(f'{dw_latest_partition}', '$dw_latest_partition')
+            sql = sql.replace(f'{dw_eold_partition}', '$dw_eold_partition')
+
+        with open(sql_file_path, 'w') as f:
+            f.write(sql)
 
 
 if __name__ == '__main__':
