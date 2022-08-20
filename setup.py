@@ -9,6 +9,7 @@ setup(
     install_requires=[
         'click',
         'jinja2',
+        'pyperclip',
         'psycopg2-binary',
     ],
     entry_points={

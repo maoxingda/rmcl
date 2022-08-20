@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 import click
 import psycopg2
+import pyperclip
 from jinja2 import Template
 
 
@@ -194,6 +195,7 @@ def depends(
 
     # <schema>.<table>
     schema_table_pattern = re.compile(rf'''
+        \b            # word boundary
         (?:{schemas}) # schema, non-capture group
         \.            # .
         \w+           # table
@@ -236,6 +238,68 @@ def depends(
     ]
 
     pprint(sorted(tables))
+
+
+@main.command()
+@click.option('-t', '--table-name', required=True)
+@click.argument('directory', default='.', type=click.Path(exists=True))
+def downstream(
+        table_name,
+        directory,
+):
+    # /*
+    # ...
+    # */
+    multiline_comment_pattern = re.compile(r'''
+        (?<=/\*) # start with /*
+        (?:.*?)  # non-capture group & any chars, contains newline(\n), non-greedy mode
+        (?=\*/)  # end with */
+    ''', re.VERBOSE | re.DOTALL)
+
+    # -- ...
+    single_line_pattern = re.compile(r'''
+        -- # start
+        .* # any chars, not contains newline(\n)
+    ''', re.VERBOSE)
+
+    # <schema>.<table>
+    schema = table_name.split('.')[0]
+    table = table_name.split('.')[1]
+    schema_table_pattern = re.compile(rf'''
+        \b           # word boundary
+        (?:{schema}) # schema, non-capture group
+        \.           # .
+        (?:{table})  # table, non-capture group
+        \b           # word boundary
+    ''', re.VERBOSE)
+
+    sql_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if not file.endswith('.sql'):
+                continue
+            if table not in file:
+                filename = os.path.join(root, file)
+                if re.search(r'(?:etl_optimization_contrast|backfill|modification_history|report)', filename):
+                    continue
+                sql_files.append(filename)
+
+    downstream_sql_files = set()
+    for sql_file in sql_files:
+        with open(sql_file) as f:
+            sql = f.read()
+
+        sql = multiline_comment_pattern.sub('', sql)
+        sql = single_line_pattern.sub('', sql)
+        what = schema_table_pattern.search(sql)
+        if what:
+            downstream_sql_files.add(sql_file)
+
+    for dsf in sorted(downstream_sql_files):
+        print(dsf)
+
+    pyperclip.copy('\n'.join(sorted(downstream_sql_files)))
+    pyperclip.paste()
 
 
 @main.command()
