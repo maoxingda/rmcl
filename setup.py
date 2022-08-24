@@ -11,6 +11,7 @@ setup(
         'jinja2',
         'pyperclip',
         'psycopg2-binary',
+        'boto3',
     ],
     entry_points={
         'console_scripts': [

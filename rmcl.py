@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from pprint import pprint
@@ -270,6 +271,7 @@ def downstream(
         (?:{schema}) # schema, non-capture group
         \.           # .
         (?:{table})  # table, non-capture group
+        (?:_today)?  # optional
         \b           # word boundary
     ''', re.VERBOSE)
 
@@ -280,7 +282,7 @@ def downstream(
                 continue
             if table not in file:
                 filename = os.path.join(root, file)
-                if re.search(r'(?:etl_optimization_contrast|backfill|modification_history|report)', filename):
+                if re.search(r'(?:etl_optimization_contrast|backfill|modification_history)', filename):
                     continue
                 sql_files.append(filename)
 
@@ -305,9 +307,9 @@ def downstream(
 @main.command()
 @click.option('-r', '--render/--no-render', default=False)
 @click.option('-s', '--dw-latest-partition',
-              default=(datetime.utcnow() - timedelta(hours=40)).strftime('%Y/%m/%d/16'), prompt='增量开始分区')
+              default=(datetime.utcnow() - timedelta(hours=40)).strftime('%Y/%m/%d/16'))
 @click.option('-e', '--dw-eold-partition',
-              default=(datetime.utcnow() - timedelta(hours=16)).strftime('%Y/%m/%d/16'), prompt='增量结束分区')
+              default=(datetime.utcnow() - timedelta(hours=16)).strftime('%Y/%m/%d/16'))
 @click.argument('file_name', required=True, type=click.Path(exists=True))
 def etl(
         render,
@@ -332,6 +334,41 @@ def etl(
 
         with open(sql_file_path, 'w') as f:
             f.write(sql)
+
+
+@main.command()
+@click.option('--cluster-id', default='bi-sandbox')
+@click.option('--start-time', required=True)
+@click.option('--end-time', required=True)
+def describe_cluster_snapshots(
+        cluster_id,
+        start_time,
+        end_time,
+):
+    import boto3
+
+    redshift_client = boto3.client('redshift')
+
+    start_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S') - timedelta(hours=8)
+    start_time = start_time.isoformat() + 'Z'
+
+    end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S') - timedelta(hours=8)
+    end_time = end_time.isoformat() + 'Z'
+
+    res = redshift_client.describe_cluster_snapshots(
+        ClusterIdentifier=cluster_id,
+        StartTime=start_time,
+        EndTime=end_time,
+    )
+
+    for snapshot in res.get('Snapshots', []):
+        if isinstance(snapshot.get('SnapshotCreateTime'), datetime):
+            snapshot['SnapshotCreateTime'] = snapshot.get('SnapshotCreateTime') + timedelta(hours=8)
+        print(json.dumps({
+            'SnapshotIdentifier': snapshot.get('SnapshotIdentifier'),
+            'SnapshotCreateTime': snapshot.get('SnapshotCreateTime'),
+            'Status': snapshot.get('Status'),
+        }, indent=4, default=str))
 
 
 if __name__ == '__main__':

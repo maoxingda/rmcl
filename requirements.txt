@@ -2,3 +2,4 @@ click
 jinja2
 psycopg2-binary
 pyperclip
+boto3
