@@ -3,7 +3,7 @@ import os
 import re
 from pprint import pprint
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import click
 import psycopg2
@@ -369,6 +369,44 @@ def describe_cluster_snapshots(
             'SnapshotCreateTime': snapshot.get('SnapshotCreateTime'),
             'Status': snapshot.get('Status'),
         }, indent=4, default=str))
+
+
+@main.command()
+@click.option('--prod/--no-prod', default=False)
+@click.option('--tablename', required=True, prompt='表名')
+@click.option('--column-name-list', default='*')
+def merge_tablel_partitions(
+        prod,
+        tablename,
+        column_name_list
+):
+    dbaddr = os.environ.get('REDSHIFT_SANDBOX')
+    if prod:
+        dbaddr = os.environ.get('REDSHIFT_PROD')
+    with psycopg2.connect(
+            f'postgresql://{dbaddr}') as conn:
+        with conn.cursor() as cursor:
+            sql = f"""
+                select table_name
+                from svv_all_tables
+                where schema_name = 'ods' and regexp_replace(table_name, '{tablename}_[0-9]{{6}}', '') = ''
+            """
+            # print(sql)
+            cursor.execute(sql)
+            tables = cursor.fetchall()
+            # print(tables)
+            if tables:
+                sqls = [f'create or replace view ods.view_{tablename} as']
+                partition_pattern = re.compile(r'([0-9]{6})')
+                for table in sorted(tables):
+                    what = partition_pattern.search(table[0])
+                    if what.group(1) > datetime.strftime(datetime.now(timezone.utc) + timedelta(hours=8), '%Y%m'):
+                        continue
+                    sqls.append(f'select {column_name_list} from ods.{table[0]} union all')
+                sqls[-1] = sqls[-1].replace(' union all', ';')
+
+                pyperclip.copy('\n'.join(sqls))
+                pyperclip.paste()
 
 
 if __name__ == '__main__':
