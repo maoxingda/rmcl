@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import textwrap
 from pprint import pprint
 
 from datetime import datetime, timedelta, timezone
@@ -386,12 +387,12 @@ def merge_tablel_partitions(
     with psycopg2.connect(
             f'postgresql://{dbaddr}') as conn:
         with conn.cursor() as cursor:
-            sql = f"""
+            sql = textwrap.dedent(f"""
                 select table_name
                 from svv_all_tables
                 where schema_name = 'ods' and regexp_replace(table_name, '{tablename}_[0-9]{{6}}', '') = ''
-            """
-            # print(sql)
+            """)
+            print(sql)
             cursor.execute(sql)
             tables = cursor.fetchall()
             # print(tables)
