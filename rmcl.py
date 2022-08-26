@@ -397,6 +397,26 @@ def merge_tablel_partitions(
             tables = cursor.fetchall()
             # print(tables)
             if tables:
+                if column_name_list == '*':
+                    all_cols = set()
+                    column_name_list = []
+                    for table in tables:
+                        cols = set()
+                        sql = textwrap.dedent(f"""
+                            select column_name 
+                            from svv_all_columns
+                            where schema_name = 'ods' and table_name = '{table[0]}'
+                        """)
+                        cursor.execute(sql)
+                        for column_name in cursor.fetchall():
+                            cols.add(column_name[0])
+                            all_cols.add(column_name[0])
+                        column_name_list.append(cols)
+
+                    for cols in column_name_list:
+                        all_cols &= cols
+                    column_name_list = ', '.join(all_cols)
+
                 sqls = [f'create or replace view ods.view_{tablename} as']
                 partition_pattern = re.compile(r'([0-9]{6})')
                 for table in sorted(tables):
