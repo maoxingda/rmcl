@@ -12,6 +12,28 @@ import pyperclip
 from jinja2 import Template
 
 
+def remove_comments(text):
+    # /*
+    # ...
+    # */
+    multiline_comment_pattern = re.compile(r'''
+        (?<=/\*) # start with /*
+        (?:.*?)  # non-capture group & any chars, contains newline(\n), non-greedy mode
+        (?=\*/)  # end with */
+    ''', re.VERBOSE | re.DOTALL)
+
+    # -- ...
+    single_line_pattern = re.compile(r'''
+        -- # start
+        .* # any chars, not contains newline(\n)
+    ''', re.VERBOSE)
+
+    text = multiline_comment_pattern.sub('', text)
+    text = single_line_pattern.sub('', text)
+
+    return text
+
+
 @click.group()
 def main():
     pass
@@ -180,21 +202,6 @@ def depends(
         exist,
         file_name,
 ):
-    # /*
-    # ...
-    # */
-    multiline_comment_pattern = re.compile(r'''
-        (?<=/\*) # start with /*
-        (?:.*?)  # non-capture group & any chars, contains newline(\n), non-greedy mode
-        (?=\*/)  # end with */
-    ''', re.VERBOSE | re.DOTALL)
-
-    # -- ...
-    single_line_pattern = re.compile(r'''
-        -- # start
-        .* # any chars, not contains newline(\n)
-    ''', re.VERBOSE)
-
     # <schema>.<table>
     schema_table_pattern = re.compile(rf'''
         \b            # word boundary
@@ -209,8 +216,7 @@ def depends(
     with open(sql_file_path) as f:
         sql = f.read()
 
-    sql = multiline_comment_pattern.sub('', sql)
-    sql = single_line_pattern.sub('', sql)
+    sql = remove_comments(sql)
     tables = schema_table_pattern.findall(sql)
 
     def is_exist(table):
@@ -249,21 +255,6 @@ def downstream(
         table_name,
         directory,
 ):
-    # /*
-    # ...
-    # */
-    multiline_comment_pattern = re.compile(r'''
-        (?<=/\*) # start with /*
-        (?:.*?)  # non-capture group & any chars, contains newline(\n), non-greedy mode
-        (?=\*/)  # end with */
-    ''', re.VERBOSE | re.DOTALL)
-
-    # -- ...
-    single_line_pattern = re.compile(r'''
-        -- # start
-        .* # any chars, not contains newline(\n)
-    ''', re.VERBOSE)
-
     # <schema>.<table>
     schema = table_name.split('.')[0]
     table = table_name.split('.')[1]
@@ -292,8 +283,7 @@ def downstream(
         with open(sql_file) as f:
             sql = f.read()
 
-        sql = multiline_comment_pattern.sub('', sql)
-        sql = single_line_pattern.sub('', sql)
+        sql = remove_comments(sql)
         what = schema_table_pattern.search(sql)
         if what:
             downstream_sql_files.add(sql_file)
