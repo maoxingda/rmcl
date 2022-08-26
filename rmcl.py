@@ -292,7 +292,6 @@ def downstream(
         print(dsf)
 
     pyperclip.copy('\n'.join(sorted(downstream_sql_files)))
-    pyperclip.paste()
 
 
 @main.command()
@@ -417,7 +416,6 @@ def merge_tablel_partitions(
                 sqls[-1] = sqls[-1].replace(' union all', ';')
 
                 pyperclip.copy('\n'.join(sqls))
-                pyperclip.paste()
 
 
 if __name__ == '__main__':
