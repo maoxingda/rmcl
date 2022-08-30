@@ -250,11 +250,16 @@ def depends(
 
 @main.command()
 @click.option('-t', '--table-name', required=True)
+@click.option('-f', '--filter', multiple=True)
 @click.argument('directory', default='.', type=click.Path(exists=True))
 def downstream(
         table_name,
         directory,
+        filter
 ):
+    if not re.match(r'\w+\.\w+', table_name):
+        print(f'💡invalid table name, expect: <schema_name.table_name> got: {table_name}')
+        return
     # <schema>.<table>
     schema = table_name.split('.')[0]
     table = table_name.split('.')[1]
@@ -268,13 +273,20 @@ def downstream(
     ''', re.VERBOSE)
 
     sql_files = []
+    filters = [
+        'backfill',
+        'modification_history',
+        'etl_optimization_contrast',
+    ]
+    filters.extend(filter)
+    filters = "|".join([f + "/" for f in filters])
     for root, dirs, files in os.walk(directory):
         for file in files:
             if not file.endswith('.sql'):
                 continue
             if table not in file:
                 filename = os.path.join(root, file)
-                if re.search(r'(?:etl_optimization_contrast|backfill|modification_history)', filename):
+                if re.search(rf'(?:{filters})', filename):
                     continue
                 sql_files.append(filename)
 
