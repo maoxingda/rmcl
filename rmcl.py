@@ -364,10 +364,12 @@ def describe_cluster_snapshots(
 @main.command()
 @click.option('--prod/--no-prod', default=False)
 @click.option('--tablename', required=True, prompt='表名')
+@click.option('--tablename-suffix', default='[0-9]{6}')
 @click.option('--column-name-list', default='*')
 def merge_tablel_partitions(
         prod,
         tablename,
+        tablename_suffix,
         column_name_list
 ):
     dbaddr = os.environ.get('REDSHIFT_SANDBOX')
@@ -379,7 +381,7 @@ def merge_tablel_partitions(
             sql = textwrap.dedent(f"""
                 select table_name
                 from svv_all_tables
-                where schema_name = 'ods' and regexp_replace(table_name, '{tablename}_[0-9]{{6}}', '') = ''
+                where schema_name = 'ods' and regexp_replace(table_name, '{tablename}_{tablename_suffix}', '') = ''
             """)
             print(sql)
             cursor.execute(sql)
@@ -407,7 +409,7 @@ def merge_tablel_partitions(
                     column_name_list = ', '.join(all_cols)
 
                 sqls = [f'create or replace view ods.view_{tablename} as']
-                partition_pattern = re.compile(r'([0-9]{6})')
+                partition_pattern = re.compile(rf'({tablename_suffix})')
                 for table in sorted(tables):
                     what = partition_pattern.search(table[0])
                     if what and what.group(1) > datetime.strftime(datetime.now(timezone.utc) + timedelta(hours=8), '%Y%m'):
