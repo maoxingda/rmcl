@@ -410,7 +410,7 @@ def merge_tablel_partitions(
                 partition_pattern = re.compile(r'([0-9]{6})')
                 for table in sorted(tables):
                     what = partition_pattern.search(table[0])
-                    if what.group(1) > datetime.strftime(datetime.now(timezone.utc) + timedelta(hours=8), '%Y%m'):
+                    if what and what.group(1) > datetime.strftime(datetime.now(timezone.utc) + timedelta(hours=8), '%Y%m'):
                         continue
                     sqls.append(f'select {column_name_list} from ods.{table[0]} union all')
                 sqls[-1] = sqls[-1].replace(' union all', ';')
