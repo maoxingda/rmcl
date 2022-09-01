@@ -432,5 +432,31 @@ def merge_tablel_partitions(
                 pyperclip.copy('\n'.join(sqls))
 
 
+@main.command()
+@click.option('--prod/--no-prod', default=False)
+@click.option('--sql', required=True)
+def explain(
+        prod,
+        sql,
+):
+    dbaddr = os.environ.get('REDSHIFT_SANDBOX')
+    if prod:
+        dbaddr = os.environ.get('REDSHIFT_PROD')
+    with psycopg2.connect(
+            f'postgresql://{dbaddr}') as conn:
+        with conn.cursor() as cursor:
+            sql = f'explain {sql}'
+            # print(sql)
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            if rows:
+                text = []
+                for row in rows:
+                    text.append(row[0])
+                plan = '\n'.join(text)
+                print(plan)
+                pyperclip.copy(plan)
+
+
 if __name__ == '__main__':
     depends()
