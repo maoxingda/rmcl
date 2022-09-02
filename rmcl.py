@@ -312,7 +312,7 @@ def downstream(
 
 @main.command()
 @click.option('-r', '--render/--no-render', default=False)
-@click.option('-d', '--delete-comment/--no-delete-comment', default=True)
+@click.option('-d', '--delete-comment/--no-delete-comment', default=False)
 @click.option('-s', '--dw-latest-partition',
               default=(datetime.utcnow() - timedelta(hours=40)).strftime('%Y/%m/%d/16'))
 @click.option('-e', '--dw-eold-partition',
@@ -344,7 +344,7 @@ def etl(
                     sql = sql.replace(f'{schema_name}.{table_name}', f'{table_name}')
 
         with open(sql_file_path, 'w') as f:
-            f.write(sql + '\n')
+            f.write(sql)
     else:
         with open(sql_file_path) as f:
             sql = f.read().replace(f'{dw_latest_partition}', '$dw_latest_partition')
