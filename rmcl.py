@@ -313,16 +313,16 @@ def downstream(
 @main.command()
 @click.option('-r', '--render/--no-render', default=False)
 @click.option('-d', '--delete-comment/--no-delete-comment', default=False)
-@click.option('-s', '--dw-latest-partition',
+@click.option('-s', '--latest-partition',
               default=(datetime.utcnow() - timedelta(hours=40)).strftime('%Y/%m/%d/16'))
-@click.option('-e', '--dw-eold-partition',
+@click.option('-e', '--eold-partition',
               default=(datetime.utcnow() - timedelta(hours=16)).strftime('%Y/%m/%d/16'))
 @click.argument('file_name', required=True, type=click.Path(exists=True))
 def etl(
         render,
         delete_comment,
-        dw_latest_partition,
-        dw_eold_partition,
+        latest_partition,
+        eold_partition,
         file_name,
 ):
     work_dir = os.getcwd()
@@ -330,8 +330,8 @@ def etl(
 
     if render:
         with open(sql_file_path) as f:
-            sql = f.read().replace('$dw_latest_partition', dw_latest_partition)
-            sql = sql.replace('$dw_eold_partition', dw_eold_partition)
+            sql = f.read().replace('$dw_latest_partition', latest_partition)
+            sql = sql.replace('$dw_eold_partition', eold_partition)
             if delete_comment:
                 sql = remove_comments(sql)
                 sql = sql.replace('/**/', '')
@@ -347,8 +347,8 @@ def etl(
             f.write(sql)
     else:
         with open(sql_file_path) as f:
-            sql = f.read().replace(f'{dw_latest_partition}', '$dw_latest_partition')
-            sql = sql.replace(f'{dw_eold_partition}', '$dw_eold_partition')
+            sql = f.read().replace(f'{latest_partition}', '$dw_latest_partition')
+            sql = sql.replace(f'{eold_partition}', '$dw_eold_partition')
 
         with open(sql_file_path, 'w') as f:
             f.write(sql)
