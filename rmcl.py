@@ -312,6 +312,7 @@ def downstream(
 
 @main.command()
 @click.option('-r', '--render/--no-render', default=False)
+@click.option('-d', '--delete-comment/--no-delete-comment', default=True)
 @click.option('-s', '--dw-latest-partition',
               default=(datetime.utcnow() - timedelta(hours=40)).strftime('%Y/%m/%d/16'))
 @click.option('-e', '--dw-eold-partition',
@@ -319,6 +320,7 @@ def downstream(
 @click.argument('file_name', required=True, type=click.Path(exists=True))
 def etl(
         render,
+        delete_comment,
         dw_latest_partition,
         dw_eold_partition,
         file_name,
@@ -330,8 +332,16 @@ def etl(
         with open(sql_file_path) as f:
             sql = f.read().replace('$dw_latest_partition', dw_latest_partition)
             sql = sql.replace('$dw_eold_partition', dw_eold_partition)
-            sql = re.sub(r'drop\s+table\s+(?:if\s+exists\s+)?\w+\.(\w+)', r'drop table if exists \1', sql, flags=re.IGNORECASE)
-            sql = re.sub(r'create\s+table\s+\w+\.(\w+)\s+as', r'create temp table \1 as', sql, flags=re.IGNORECASE)
+            if delete_comment:
+                sql = remove_comments(sql)
+                sql = sql.replace('/**/', '')
+                sql = re.sub(r'\n{2,}', '\n\n', sql)
+            cte_pattern = r'create\s+table\s+(\w+)\.(\w+)\s+as'
+            what = re.findall(cte_pattern, sql, flags=re.IGNORECASE)
+            if what:
+                for schema_name, table_name in what:
+                    sql = re.sub(cte_pattern, r'create temp table \2 as', sql, flags=re.IGNORECASE)
+                    sql = sql.replace(f'{schema_name}.{table_name}', f'{table_name}')
 
         with open(sql_file_path, 'w') as f:
             f.write(sql + '\n')
