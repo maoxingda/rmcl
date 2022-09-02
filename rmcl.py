@@ -330,9 +330,10 @@ def etl(
         with open(sql_file_path) as f:
             sql = f.read().replace('$dw_latest_partition', dw_latest_partition)
             sql = sql.replace('$dw_eold_partition', dw_eold_partition)
+            sql = re.sub(r'create\s+table\s+\w+\.(\w+)\s+as', r'create temp table \1 as', sql, flags=re.IGNORECASE)
 
         with open(sql_file_path, 'w') as f:
-            f.write(sql)
+            f.write(sql + '\n')
     else:
         with open(sql_file_path) as f:
             sql = f.read().replace(f'{dw_latest_partition}', '$dw_latest_partition')
