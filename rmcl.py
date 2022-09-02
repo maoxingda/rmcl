@@ -434,6 +434,7 @@ def merge_tablel_partitions(
 
                     for cols in column_name_list:
                         all_cols &= cols
+                    all_cols = [f'"{col}"' for col in all_cols]
                     column_name_list = ', '.join(all_cols)
 
                 sqls = [f'create or replace view ods.view_{tablename} as']
@@ -443,7 +444,8 @@ def merge_tablel_partitions(
                     if what and what.group(1) > datetime.strftime(datetime.now(timezone.utc) + timedelta(hours=8), '%Y%m'):
                         continue
                     sqls.append(f'select {column_name_list} from ods.{table[0]} union all')
-                sqls[-1] = sqls[-1].replace(' union all', ';')
+                sqls[-1] = sqls[-1].replace(' union all', '')
+                sqls.append('with no schema binding;')
 
                 pyperclip.copy('\n'.join(sqls))
 
