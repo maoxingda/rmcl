@@ -435,6 +435,7 @@ def merge_tablel_partitions(
                     for cols in column_name_list:
                         all_cols &= cols
                     all_cols = [f'"{col}"' for col in all_cols]
+                    all_cols = sorted(all_cols)
                     column_name_list = ', '.join(all_cols)
 
                 sqls = [f'create or replace view ods.view_{tablename} as']
@@ -471,6 +472,38 @@ def explain(
                 text = []
                 for row in rows:
                     text.append(row[0])
+                plan = '\n'.join(text)
+                print(plan)
+                pyperclip.copy(plan)
+
+
+@main.command()
+@click.option('--prod/--no-prod', default=False)
+@click.option('--table-name', required=True)
+def get_table_columns(
+        prod,
+        table_name,
+):
+    if not re.match(r'\w+\.\w+', table_name):
+        return
+    dbaddr = os.environ.get('REDSHIFT_SANDBOX')
+    if prod:
+        dbaddr = os.environ.get('REDSHIFT_PROD')
+    with psycopg2.connect(
+            f'postgresql://{dbaddr}') as conn:
+        with conn.cursor() as cursor:
+            sql = f"""
+                select column_name from svv_all_columns 
+                where schema_name = '{table_name.split(".")[0]}' and table_name = '{table_name.split(".")[1]}'
+            """
+            # print(sql)
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            if rows:
+                text = []
+                for row in rows:
+                    text.append(f'- name: {row[0]}')
+                    text.append(f'  description: ""')
                 plan = '\n'.join(text)
                 print(plan)
                 pyperclip.copy(plan)
