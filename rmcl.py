@@ -311,6 +311,39 @@ def downstream(
 
 
 @main.command()
+@click.option('-t', '--text', required=True)
+@click.argument('directory', default='.', type=click.Path(exists=True))
+def find_usage(
+        text,
+        directory,
+):
+    sql_files = []
+    if directory == '.':
+        directory = os.getcwd()
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if not file.endswith('.sql'):
+                continue
+            filename = os.path.join(root, file)
+            sql_files.append(filename)
+
+    usage_files = set()
+    for sql_file in sql_files:
+        with open(sql_file) as f:
+            sql = f.read()
+
+        sql = remove_comments(sql)
+        what = re.search(rf'{text}', sql)
+        if what:
+            usage_files.add(sql_file.replace(directory + '/', ''))
+
+    for uf in sorted(usage_files):
+        print(uf)
+
+    pyperclip.copy('\n'.join(sorted(usage_files)))
+
+
+@main.command()
 @click.option('-r', '--render/--no-render', default=False)
 @click.option('-d', '--delete-comment/--no-delete-comment', default=False)
 @click.option('-s', '--latest-partition',
