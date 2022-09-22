@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='redshift-management-compiler',
-    version='0.0.0',
+    version='0.0.1',
     py_modules=[
         'rmcl',
     ],

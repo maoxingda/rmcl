@@ -344,6 +344,36 @@ def find_usage(
 
 
 @main.command()
+@click.option('-p', '--prefix', default='')
+def find_columns(
+        prefix
+):
+    columns = {}
+    text = pyperclip.paste()
+    text = remove_comments(text)
+    if prefix == '':
+        pattern = r'([_a-zA-Z][_a-zA-Z0-9]*)\.([_a-zA-Z][_a-zA-Z0-9]*)'
+    else:
+        pattern = rf'({prefix})\.([_a-zA-Z][_a-zA-Z0-9]*)'
+
+    for column in re.finditer(pattern, text):
+        alias = column.group(1)
+        column_name = column.group(2)
+        if re.fullmatch(r'(?:dim|dwd|met|stg|dws|ods|emr|ads)', alias):
+            continue
+        if alias not in columns:
+            columns[alias] = set()
+        columns[alias].add(column_name)
+
+    for alias, column_names in columns.items():
+        column_names = sorted(column_names)
+        for column_name in column_names:
+            print(f'{alias}.{column_name}')
+
+    # pyperclip.copy('\n'.join(sorted(columns)))
+
+
+@main.command()
 @click.option('-r', '--render/--no-render', default=False)
 @click.option('-d', '--delete-comment/--no-delete-comment', default=False)
 @click.option('-s', '--latest-partition',
