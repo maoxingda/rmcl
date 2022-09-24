@@ -12,6 +12,7 @@ setup(
         'pyperclip',
         'psycopg2-binary',
         'boto3',
+        'sql_metadata',
     ],
     entry_points={
         'console_scripts': [

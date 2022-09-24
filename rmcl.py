@@ -9,29 +9,34 @@ from datetime import datetime, timedelta, timezone
 import click
 import psycopg2
 import pyperclip
+import sqlparse
 from jinja2 import Template
+from sql_metadata import Parser
 
 
-def remove_comments(text):
+def remove_comments(sql_text):
+    """
+    删除sql_text中的注释，返回删除注释之后的sql_text
+    """
     # /*
     # ...
     # */
     multiline_comment_pattern = re.compile(r'''
-        (?<=/\*) # start with /*
-        (?:.*?)  # non-capture group & any chars, contains newline(\n), non-greedy mode
-        (?=\*/)  # end with */
+        /\*  # start with /*
+        .*?  # any characters, contains newline(\n), non-greedy mode
+        \*/  # end with */
     ''', re.VERBOSE | re.DOTALL)
 
     # -- ...
     single_line_pattern = re.compile(r'''
-        -- # start
-        .* # any chars, not contains newline(\n)
+        --   # start with --
+        .*   # any characters, not contains newline(\n)
     ''', re.VERBOSE)
 
-    text = multiline_comment_pattern.sub('', text)
-    text = single_line_pattern.sub('', text)
+    sql_text = multiline_comment_pattern.sub('', sql_text)
+    sql_text = single_line_pattern.sub('', sql_text)
 
-    return text
+    return sql_text
 
 
 @click.group()
@@ -344,33 +349,11 @@ def find_usage(
 
 
 @main.command()
-@click.option('-p', '--prefix', default='')
-def find_columns(
-        prefix
-):
-    columns = {}
-    text = pyperclip.paste()
-    text = remove_comments(text)
-    if prefix == '':
-        pattern = r'([_a-zA-Z][_a-zA-Z0-9]*)\.([_a-zA-Z][_a-zA-Z0-9]*)'
-    else:
-        pattern = rf'({prefix})\.([_a-zA-Z][_a-zA-Z0-9]*)'
-
-    for column in re.finditer(pattern, text):
-        alias = column.group(1)
-        column_name = column.group(2)
-        if re.fullmatch(r'(?:dim|dwd|met|stg|dws|ods|emr|ads)', alias):
-            continue
-        if alias not in columns:
-            columns[alias] = set()
-        columns[alias].add(column_name)
-
-    for alias, column_names in columns.items():
-        column_names = sorted(column_names)
-        for column_name in column_names:
-            print(f'{alias}.{column_name}')
-
-    # pyperclip.copy('\n'.join(sorted(columns)))
+def find_columns():
+    sql_text = pyperclip.paste()
+    sql_text = remove_comments(sql_text)
+    for stmt in sqlparse.split(sql_text):
+        pprint(Parser(stmt).columns)
 
 
 @main.command()
