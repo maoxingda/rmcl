@@ -202,7 +202,7 @@ def r15(
 
 @main.command()
 @click.option('-s', '--schemas', show_default=True, default='stg|dim|dwd|dws|met')
-@click.option('-f', '--filters', show_default=True, default='_stg|_staging|_tmp|_temp')
+@click.option('-f', '--filters', show_default=True, default='_stg|_staging|_tmp|_temp|_increment')
 @click.option('-e', '--exist / --no-exist', default=False)
 @click.argument('file_name', required=True, type=click.Path(exists=True))
 def depends(
