@@ -201,8 +201,8 @@ def r15(
 
 
 @main.command()
-@click.option('-s', '--schemas', show_default=True, default='stg|dim|dwd|dws|met')
-@click.option('-f', '--filters', show_default=True, default='_stg|_staging|_tmp|_temp|_increment')
+@click.option('-s', '--schemas', show_default=True, default='stg|dim|dwd|dws|met|ads')
+@click.option('-f', '--filters', show_default=True, default='(?:_stg|_staging|_tmp|_temp|_increment)$')
 @click.option('-e', '--exist / --no-exist', default=False)
 @click.argument('file_name', required=True, type=click.Path(exists=True))
 def depends(
@@ -246,8 +246,7 @@ def depends(
                     return True
 
     tables = set(
-        schema_table for schema_table in tables
-        if schema_table.split('.')[1] not in file_name and (not exist or is_exist(schema_table))
+        schema_table for schema_table in tables if not exist or is_exist(schema_table)
     )
 
     tables = [
