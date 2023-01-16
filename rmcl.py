@@ -247,7 +247,7 @@ def depends(
 
     tables = set(
         schema_table for schema_table in tables
-        if schema_table.split('.')[1] not in file_name and (not exist or is_exist(schema_table))
+        if schema_table.split('.')[1].lower() not in file_name.lower() and (not exist or is_exist(schema_table))
     )
 
     tables = [
