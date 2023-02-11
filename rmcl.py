@@ -556,5 +556,18 @@ def get_table_columns(
                 pyperclip.copy(plan)
 
 
+@main.command()
+@click.argument('file_name', required=True, type=click.Path(exists=True))
+def uncomment(
+        file_name,
+):
+    sql_file_name = os.path.join(os.getcwd(), file_name)
+
+    with open(sql_file_name) as f:
+        sql = remove_comments(f.read())
+
+    print(sql)
+
+
 if __name__ == '__main__':
-    depends()
+    pass
