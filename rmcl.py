@@ -35,6 +35,7 @@ def remove_comments(sql_text):
 
     sql_text = multiline_comment_pattern.sub('', sql_text)
     sql_text = single_line_pattern.sub('', sql_text)
+    sql_text = re.sub(r'(\s*\n){2,}', '\n\n', sql_text)
 
     return sql_text
 
