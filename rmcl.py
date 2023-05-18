@@ -229,6 +229,11 @@ def depends(
     sql = remove_comments(sql)
     tables = schema_table_pattern.findall(sql)
 
+    emr_to_ods_table_pattern = re.compile(r'ods\.db_\w+')
+    emr_to_ods_tables = emr_to_ods_table_pattern.findall(sql)
+
+    tables.extend(emr_to_ods_tables)
+
     def is_exist(table):
         schema_name = table.split('.')[0]
         table_name = table.split('.')[1]
