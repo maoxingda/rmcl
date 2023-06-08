@@ -232,7 +232,11 @@ def depends(
     emr_to_ods_table_pattern = re.compile(r'ods\.db_\w+')
     emr_to_ods_tables = emr_to_ods_table_pattern.findall(sql)
 
+    business_logic_ods_table_pattern = re.compile(r'ods\.business_logic_\w+')
+    business_logic_ods_tables = business_logic_ods_table_pattern.findall(sql)
+
     tables.extend(emr_to_ods_tables)
+    tables.extend(business_logic_ods_tables)
 
     def is_exist(table):
         schema_name = table.split('.')[0]
