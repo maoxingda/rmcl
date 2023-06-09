@@ -363,7 +363,7 @@ def find_columns():
     sql_text = pyperclip.paste()
     sql_text = remove_comments(sql_text)
     for stmt in sqlparse.split(sql_text):
-        for column in sorted(Parser(stmt).columns_dict['select']):
+        for column in sorted(Parser(stmt).columns):
             print(column)
 
 
