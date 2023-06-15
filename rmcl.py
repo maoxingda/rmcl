@@ -368,6 +368,18 @@ def find_columns():
 
 
 @main.command()
+def join_format():
+    sql_text = pyperclip.paste()
+    prefix_whitespace_pattern = re.compile(r'\s+')
+    join_table_pattern = re.compile(r'\bjoin\b\s+')
+    on_table_pattern = re.compile(r'\bon\b\s+')
+    prefix_whitespace = prefix_whitespace_pattern.search(sql_text).group(0)
+    sql_text = join_table_pattern.sub(f'join\n{prefix_whitespace}    ', sql_text)
+    sql_text = on_table_pattern.sub(f'on\n{prefix_whitespace}    ', sql_text)
+    pyperclip.copy(sql_text)
+
+
+@main.command()
 @click.option('-r', '--render/--no-render', default=False)
 @click.option('-d', '--delete-comment/--no-delete-comment', default=False)
 @click.option('-s', '--latest-partition',
