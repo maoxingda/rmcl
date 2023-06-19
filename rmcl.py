@@ -359,9 +359,10 @@ def find_usage(
 
 
 @main.command()
-def find_columns():
-    sql_text = pyperclip.paste()
-    sql_text = remove_comments(sql_text)
+@click.option('-t', '--text', required=True)
+def find_columns(text):
+    # sql_text = pyperclip.paste()
+    sql_text = remove_comments(text)
     for stmt in sqlparse.split(sql_text):
         for column in sorted(Parser(stmt).columns):
             print(column)
