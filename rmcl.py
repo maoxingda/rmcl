@@ -369,8 +369,9 @@ def find_columns(text):
 
 
 @main.command()
-def join_format():
-    sql_text = pyperclip.paste()
+@click.option('-t', '--text', required=True)
+def join_format(text):
+    sql_text = text
     prefix_whitespace_pattern = re.compile(r'\s+')
     join_table_pattern = re.compile(r'\bjoin\b\s+')
     on_table_pattern = re.compile(r'\bon\b\s+')
