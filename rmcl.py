@@ -264,6 +264,11 @@ def depends(
         schema_table for schema_table in tables if not re.search(rf'{filters}', schema_table.split('.')[1])
     ]
 
+    # 从依赖候选中去掉create table as中间表
+    tables = [
+        schema_table for schema_table in tables if not re.search(rf'create\s+table\s+{schema_table}\s+as', sql)
+    ]
+
     pprint(sorted(tables))
 
 
