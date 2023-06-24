@@ -229,10 +229,10 @@ def depends(
     sql = remove_comments(sql)
     tables = schema_table_pattern.findall(sql)
 
-    emr_to_ods_table_pattern = re.compile(r'ods\.db_\w+')
+    emr_to_ods_table_pattern = re.compile(r'ods\.db_\w+', re.IGNORECASE)
     emr_to_ods_tables = emr_to_ods_table_pattern.findall(sql)
 
-    business_logic_ods_table_pattern = re.compile(r'ods\.business_logic_\w+')
+    business_logic_ods_table_pattern = re.compile(r'ods\.business_logic_\w+', re.IGNORECASE)
     business_logic_ods_tables = business_logic_ods_table_pattern.findall(sql)
 
     tables.extend(emr_to_ods_tables)
@@ -261,12 +261,17 @@ def depends(
     )
 
     tables = [
-        schema_table for schema_table in tables if not re.search(rf'{filters}', schema_table.split('.')[1])
+        schema_table for schema_table in tables if not re.search(rf'{filters}', schema_table.split('.')[1], re.IGNORECASE)
     ]
 
     # 从依赖候选中去掉create table as中间表
     tables = [
-        schema_table for schema_table in tables if not re.search(rf'create\s+table\s+{schema_table}\s+as', sql)
+        schema_table for schema_table in tables if not re.search(rf'create\s+table\s+{schema_table}\s+as', sql, re.IGNORECASE)
+    ]
+
+    # 排除本身
+    tables = [
+        schema_table for schema_table in tables if not re.search(rf'insert\s+into\s+{schema_table}\b', sql, re.IGNORECASE)
     ]
 
     pprint(sorted(tables))
