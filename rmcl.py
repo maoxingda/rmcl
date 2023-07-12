@@ -126,6 +126,21 @@ def t1(
 
 
 @main.command()
+@click.argument('file_name', required=True, type=click.Path(exists=True))
+def render(
+        file_name,
+):
+    work_dir = os.getcwd()
+    sql_file_path = f'{work_dir}/{file_name}'
+
+    with open(sql_file_path) as f:
+        sql = Template(f.read()).render()
+
+    with open(sql_file_path, 'w') as f:
+        f.write(sql)
+
+
+@main.command()
 @click.option('-r', '--render/--no-render', default=False)
 @click.option('-c', '--client-snowflake-id', default='abcdefhjkl')
 @click.option('-s', '--subsidy-snowflake-id', required=True, prompt='餐补雪花ID')
@@ -370,12 +385,17 @@ def find_usage(
 
 @main.command()
 @click.option('-t', '--text', required=True)
-def find_columns(text):
+@click.option('-c', '--column-name', show_default=True, default='')
+def find_columns(text, column_name):
     # sql_text = pyperclip.paste()
     sql_text = remove_comments(text)
     for stmt in sqlparse.split(sql_text):
         for column in sorted(Parser(stmt).columns):
-            print(column)
+            if column_name:
+                if column_name == column:
+                    print(column)
+            else:
+                print(column)
 
 
 @main.command()
